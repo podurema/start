@@ -1,0 +1,37 @@
+import telebot
+import requests
+
+
+def scrape():
+    URL = 'https://www.binance.com/en/trade/BTC_USDT?type=spot'
+    response = requests.get(URL)
+    response_json = response.json()
+    return float(response_json["USD"]["last"])
+
+
+token = '6959485683:AAGOsow-UaDmZm9GO8A6TG5QfbGtNDBpvI4'
+bot = telebot.TeleBot(token)
+
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    last_price = scrape()
+    bot.send_message(message.chat.id, f'Привет, сейчас цена 1 Биткоина равна {last_price}')
+    while True:
+        latest_price = scrape()
+        dif = latest_price - last_price
+        if dif >= 10:
+            bot.send_message(message.chat.id, f' Цена повысилась на {dif} и стала равна {round(latest_price, 2)}')
+            last_price = latest_price
+        elif dif <= -10:
+            bot.send_message(message.chat.id, f' Цена упала на {abs(dif)} и стала равна {round(latest_price, 2)}')
+            last_price = latest_price
+
+
+@bot.message_handler(content_types=['text', 'photo', 'file'])
+def text(message):
+    bot.send_message(message.chat.id,
+                     'Зачем мне это? если я ничего не отправил, значит цена еще не изменилась на 1 процент')
+
+
+bot.infinity_polling()
